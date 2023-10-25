@@ -4,7 +4,9 @@ import threading
 import signal
 
 class RequestServer:
-  def __init__(self):
+  def __init__(self, cond_var=threading.Condition()):
+    self.cv = cond_var
+
     self.do_work = False
     self.work_thread = threading.Thread(target=self.socket_loop, args=())
     self.setup_socket()
@@ -37,7 +39,10 @@ class RequestServer:
               data = self.conn_sock.recv(1024)
               print(data)
               self.message_queue.append(str(data))
-              if not data: break
+              if not data:
+                with self.cv:  
+                  self.cv.notify()
+                break
               self.conn_sock.sendall(data)
 
   # public member function
@@ -54,10 +59,16 @@ class RequestServer:
       self.do_work = False
       self.sock.close()
       self.work_thread.join()
-
     else:
       print("WARNING: not doing any work, meaningless call")
       return
+
+  def get_message(self):
+    if len(self.message_queue) == 0:
+      print("WARNING: message length zero  not popping")
+      return str()
+    else:
+      return self.message_queue.pop(0)
 
   def __del__(self):
     #close socket
