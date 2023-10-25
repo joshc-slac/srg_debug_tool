@@ -11,4 +11,8 @@ setup:
 
 .PHONY: run
 run:
-	@python3 main.py
+	python3 SRGTester.py
+
+.PHONY: request_reading
+request_reading:
+	@python3 testClient.py -m PERFORM_READING
