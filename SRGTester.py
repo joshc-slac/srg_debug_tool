@@ -4,6 +4,7 @@ import time
 import numpy as np
 from epics import caget, caput
 
+from SRGTesterJobs import GetPerformReadingJobs
 from RequestServer import RequestServer
 
 class SRGTester:
@@ -11,7 +12,7 @@ class SRGTester:
     self.cv = threading.Condition()
     self.req_serv = RequestServer(self.cv)
     self.message_thread = threading.Thread(target= self.mess_thread, args=(self.cv,))
-    self.work_queue = []
+    self.work_queue = [] # work queue of anonymous functions void(void)
 
     #PVs of interest:
     self.ballspeed_pv = "EM1K0:GMD:GSR:1:GetRotSpeed"
@@ -29,17 +30,29 @@ class SRGTester:
   def work_thread(self):
     while(1):
       if self.work_queue:
-        job = self.work_queue.pop()
-      else:
-        print("no work....")
-        time.sleep(5)
+        job = self.work_queue.pop(0)
+        print(f"Starting Job {job}")
+        job()
+        print(f"Finished Job {job}")
 
+      else:
+        time.sleep(2)
+
+  '''
+  Here we parse whatever byes we read off the TCP line and generate jobs to perform
+  TODO: this should be protobuff'ed
+  '''
   def mess_thread(self, cv):
     while(1):
       with cv: #in python this also acquires lock
         cv.wait()
-        self.work_queue.append(self.req_serv.get_message())
-        print("you fuckin") 
+      mess = self.req_serv.get_message()
+      if mess == "PERFORM_READING":
+        print("got message PERFORM_READING")
+        for job in GetPerformReadingJobs():
+          self.work_queue.append(job)
+      else:
+        print(f"WARNING: do not know how to interpret message: {mess}")
 
   def start_work(self):
     self.do_work = True

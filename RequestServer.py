@@ -24,21 +24,21 @@ class RequestServer:
   def socket_loop(self):
     # work loop gate
     while (self.do_work):
-      print("Listening for new connection")
+      # print("Listening for new connection")
       # listening work
       self.sock.listen(1) 
       try:
         self.conn_sock, self.conn_addr = self.sock.accept() # blocking call, see 10 second timeout init setup_socket
       except socket.timeout:
-        print("WARNING: Socket timeout detected, relistening for connection")
+        # print("WARNING: Socket timeout detected, relistening for connection")
         continue
 
       with self.conn_sock:
           print('Connected by', self.conn_addr )
           while True:
               data = self.conn_sock.recv(1024)
-              print(data)
-              self.message_queue.append(str(data))
+              #enqueue bytes as string. fwiw python sucks gimme c baby
+              self.message_queue.append(str(data.decode()))
               if not data:
                 with self.cv:  
                   self.cv.notify()
