@@ -1,9 +1,11 @@
 import time
-
+import telnetlib
+import threading
 from epics import caget
 
 ''''
-Generate anonymous function to complte jobs
+Generate anonymous functions to complte jobs
+Configures signalling between functions to schedule subtasks
 '''
 def GetPerformReadingJobs():
   # step 1: caput to EM1K0:GMD:GSR:1:ApplyZeroOffset
@@ -28,6 +30,34 @@ def ReadBallHzForXSeconds(read_time):
     time.sleep(0.5)
   return ret_list
 
+'''
+- Acquires telnet connection to perform read
+- Reads until kill signal excerices
+Todo josh schedule this at the same time as the command to assert zero signal.
+'''
+def TelnetRead(ev, fname="sample.txt"):
+  #acquire telnet 
+  with telnetlib.Telnet("ser-kfe-xgmd-01", 4012) as tn:
+    # open a wel named file here
+    f = open(f"{fname}", "w")
+    while(ev.is_set() != True):
+      print("working on it...")
+      try:
+        data = tn.read_some().decode("utf-8")
+        #write data to file thusly:
+        f.write(data)
+      except UnicodeDecodeError as e:
+        print(f"Ignoring UnicodeDecodeError: {e}")
+        continue
+    f.close()
+  return 
+
+
+
 if __name__ == '__main__':
-  l = ReadBallHzForXSeconds(10)
-  print(l)
+  even = threading.Event()
+  t1 = threading.Thread(target=TelnetRead, kwargs={"ev":even, "fname":"telnetlisten.txt"})
+  t1.start()
+  time.sleep(5)
+  even.set()
+  t1.join()

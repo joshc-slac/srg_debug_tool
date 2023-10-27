@@ -23,11 +23,20 @@ You will have to run `make setup && source bin/activate && pip3 install -r requi
 
 *You can also use our "git as a file transfer protocol" schema that we use elsewhere, I suggest disambiguating the wonderful tool that is git from ftp.*
 
-Pedantic note: this should all be dockerized why wont they let me run docker on prod tools....
+### Makefile
+To simplify the user interactions we are codifying normal steps in the Makefile. 
+- `make setup` - will add python venv infrastructure to current directory if not already present
+- `make run` - runs the "application" of this repo: SRGTester, waits for requested action from client
+- `make request_reading`- spawns an instance of the client and specifically requests a reading be performed by server
+- `make transfer_working_files` - rsyncs working files to development machine `psbuild-rhel7`, if FTPUSER not definded defaults to `joshc`
+
+Pedantic note: this should all be dockerized why wont they let me run docker on prod tools.
 
 ## Note that no besides Josh cares about
 This would all be a million times better in gods programming langauge c++ todo port 
 ### TODOS:
+- [ ] integrate flake8 into make file
+
 - [ ] make TCP server more legit or switch to GRPC (or just protobuf over tcp...)
 - [ ] Formalize (as far as python allows) notion of job queue, what is a job in python? Potentially use a python "wrapper" to anonymize these functions for job queue purposes
 - [ ] add spdlog or our epics logging environment

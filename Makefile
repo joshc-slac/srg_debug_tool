@@ -1,6 +1,8 @@
 SHELL:=/bin/bash
 VERSION=0x03
 
+FTPUSER ?=joshc
+
 .PHONY: setup
 setup:
 	@if [ -e "bin/activate" ]; then \
@@ -15,4 +17,8 @@ run:
 
 .PHONY: request_reading
 request_reading:
-	@python3 testClient.py -m PERFORM_READING
+	@source bin/activate && python3 testClient.py -m PERFORM_READING
+
+.PHONY: transfer_working_files
+transfer_working_files:
+	rsync -zvaP --files-from=rsync-file-list . $(FTPUSER)@psbuild-rhel7:~/srg_failure_tester
