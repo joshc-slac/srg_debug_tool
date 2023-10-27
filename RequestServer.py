@@ -3,6 +3,7 @@ import threading
 
 import signal
 
+
 class RequestServer:
   def __init__(self, cond_var=threading.Condition()):
     self.cv = cond_var
@@ -10,9 +11,9 @@ class RequestServer:
     self.do_work = False
     self.work_thread = threading.Thread(target=self.socket_loop, args=())
     self.setup_socket()
-    self.message_queue = [] # python "queue" just have to treat it like one 
+    self.message_queue = []  # python "queue" just have to treat it like one
 
-  ## private member functions
+  # private member functions
   def setup_socket(self):
     self.HOST = "localhost"
     self.PORT = 11312
@@ -26,28 +27,28 @@ class RequestServer:
     while (self.do_work):
       # print("Listening for new connection")
       # listening work
-      self.sock.listen(1) 
+      self.sock.listen(1)
       try:
-        self.conn_sock, self.conn_addr = self.sock.accept() # blocking call, see 10 second timeout init setup_socket
+        self.conn_sock, self.conn_addr = self.sock.accept()  # blocking call, see 10 second timeout init setup_socket
       except socket.timeout:
         # print("WARNING: Socket timeout detected, relistening for connection")
         continue
 
       with self.conn_sock:
-          print('Connected by', self.conn_addr )
+          print('Connected by', self.conn_addr)
           while True:
               data = self.conn_sock.recv(1024)
-              #enqueue bytes as string. fwiw python sucks gimme c baby
+              # enqueue bytes as string. fwiw python sucks gimme c baby
               self.message_queue.append(str(data.decode()))
               if not data:
-                with self.cv:  
+                with self.cv:
                   self.cv.notify()
                 break
               self.conn_sock.sendall(data)
 
   # public member function
   def start_work(self):
-    if (self.do_work == False):
+    if (self.do_work is False):
       self.do_work = True
       self.work_thread.start()
     else:
@@ -55,7 +56,7 @@ class RequestServer:
       return
 
   def stop_work(self, *args):
-    if (self.do_work == True):
+    if (self.do_work is True):
       self.do_work = False
       self.sock.close()
       self.work_thread.join()
@@ -71,8 +72,9 @@ class RequestServer:
       return self.message_queue.pop(0)
 
   def __del__(self):
-    #close socket
+    # close socket
     self.sock.close()
+
 
 if __name__ == "__main__":
   r = RequestServer()
