@@ -29,6 +29,7 @@ To simplify the user interactions we are codifying normal steps in the Makefile.
 - `make run` - runs the "application" of this repo: SRGTester, waits for requested action from client
 - `make request_reading`- spawns an instance of the client and specifically requests a reading be performed by server
 - `make transfer_working_files` - rsyncs working files to development machine `psbuild-rhel7`, if FTPUSER not definded defaults to `joshc`
+- `make flake8` - will lint the project, please do so!
 
 Pedantic note: this should all be dockerized why wont they let me run docker on prod tools.
 

@@ -22,3 +22,7 @@ request_reading:
 .PHONY: transfer_working_files
 transfer_working_files:
 	rsync -zvaP --files-from=rsync-file-list . $(FTPUSER)@psbuild-rhel7:~/srg_failure_tester
+
+.PHONY: flake8
+flake8:
+	@python3 -m flake8 || true
