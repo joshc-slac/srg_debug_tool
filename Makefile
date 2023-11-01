@@ -17,7 +17,7 @@ run:
 
 .PHONY: request_reading
 request_reading:
-	@source bin/activate && python3 testClient.py -m PERFORM_READING
+	@source bin/activate && python3 testClient.py -m 0
 
 .PHONY: transfer_working_files
 transfer_working_files:
@@ -26,3 +26,7 @@ transfer_working_files:
 .PHONY: flake8
 flake8:
 	@python3 -m flake8 || true
+
+.PHONY: test
+test:
+	@source bin/activate && pytest tests/Test*.py

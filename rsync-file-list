@@ -2,5 +2,6 @@ RequestServer.py
 testClient.py
 SRGTester.py
 SRGTesterJobs.py
+Task.py
 Makefile
 requirements.txt

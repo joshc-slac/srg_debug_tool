@@ -1,36 +1,64 @@
-import time
-import telnetlib
-import threading
-from epics import caget
-
-''''
-Generate anonymous functions to complte jobs
-Configures signalling between functions to schedule subtasks
+'''
+Josh Cohen 2023 
+A commdand generator file. Packages and sequences tasks for an owning class to execute in an anonymous job queue
 '''
 
 
-def GetPerformReadingJobs():
+import time
+import telnetlib
+import threading
+import typing
+
+from epics import caget
+
+from Task import Task
+
+
+def get_perform_reading_jobs():
+  ''''
+  Generate anonymous functions to complte jobs
+  Configures signalling between functions to schedule subtasks
+  Returns a list of Tasks
+  '''
   # step 1: caput to EM1K0:GMD:GSR:1:ApplyZeroOffset
   # step 2: monitor EM1K0:GMD:GSR:1:GetRotSpeed for 30 seconds
   # step 3: concurrently monitor telnet logs
   # step 4: parse output of step 2; determine if failure, sort accordingling
 
-  pub_zero = lambda : print("publishing a request to zero left unimplemented for now")
-  read_hz = lambda: ReadBallHzForXSeconds(30)
-  telnet_trace = lambda: print("not telnetting yet fam")
-  eval_john = lambda: print("not implemented")
-  return [pub_zero, read_hz, telnet_trace, eval_john]  # python lists suck, either use a dict or real queue or smthing
+  pub_zero = Task("publish_zero",
+                  lambda :
+                    print("publishing a request to zero left unimplemented for now"))
+  read_hz = Task("read_hz",
+                 lambda:
+                   read_ball_hz_for_x_seconds(30))
+  telnet_trace = Task("telnet_trace",
+                      lambda: 
+                        print("not telnetting yet fam"))
+  eval_run = Task("evaluate_run",
+                  lambda: 
+                    print("not implemented"))
+  
+  return [pub_zero, read_hz, telnet_trace, eval_run]  # python lists suck, either use a dict or real queue or smthing
 
 
-'''
-Will return a list of samples of ball speed over a 30 second horizon
-'''
+def read_ball_hz_for_x_seconds(read_time=30.0, event_signal=threading.Event()):
+  '''
+  Description:
+    Will return a list of samples of ball speed over a x second horizon
+  Parameters:
+    read_time: duration of read. if specified as < 0 will read indefinitely till event signal received
+    event_signal: kill signal for read
+  '''
 
-
-def ReadBallHzForXSeconds(read_time):
   startTime = time.time()
   ret_list = []
-  while ((time.time() - startTime) < read_time):
+
+  if (read_time > 0):
+    should_read = lambda : (time.time() - startTime) < read_time
+  else:
+    should_read = lambda: True
+
+  while (should_read() and not event_signal.is_set()):
     ret_list.append(caget("EM1K0:GMD:GSR:1:GetRotSpeed"))
     time.sleep(0.5)
   return ret_list

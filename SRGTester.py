@@ -1,22 +1,38 @@
 import threading
 import time
+from enum import IntEnum
 
-from srg_tester_jobs import getperformreadingjobs
-from request_server import request_server
+from SRGTesterJobs import get_perform_reading_jobs
+from RequestServer import RequestServer
 
 
-class srg_tester:
+class SrgTesterJobType(IntEnum):
+  # TODO(josh): can reasonably be split into its own file
+  # TODO(josh): get StrEnum to work on prod machines... needs pip-ability
+  NONE = -1
+  '''
+  # High Level Command: Perform Reading
+  step 1: caput to EM1K0:GMD:GSR:1:ApplyZeroOffset
+  step 2: monitor EM1K0:GMD:GSR:1:GetRotSpeed for 30 seconds
+  step 3: concurrently monitor telnet logs
+  step 4: parse output of step 2; determine if failure, sort accordingling 
+  '''
+  PERFORM_READING = 0
+  APPLY_ZERO_OFFSET = 1
+  MONITOR_ROT_SPEED = 2
+  MONITOR_SERIAL = 3
+  EVALUATE_RUN = 4
+
+
+class SrgTester:
   def __init__(self):
-    self.cv = threading.condition()
-    self.req_serv = request_server(self.cv)
-    self.message_thread = threading.thread(target=self.mess_thread, args=(self.cv,))
+    self.cv = threading.Condition()
+    self.req_serv = RequestServer(self.cv)
+    self.message_thread = threading.Thread(target=self.mess_thread, args=(self.cv,))
     self.work_queue = []  # work queue of anonymous functions void(void)
 
-    # pvs of interest:
-    self.ballspeed_pv = "EM1K0:GMD:GSR:1:GetRotSpeed"
-
     self.do_work = False
-    self.work_thread = threading.thread(target=self.work_thread, args=())
+    self.work_thread = threading.Thread(target=self.work_thread, args=())
 
   '''
   the main work thread of the srgtester must to 4 things:
@@ -28,15 +44,15 @@ class srg_tester:
   def work_thread(self):
     while (1):
       if self.work_queue:
-        job = self.work_queue.pop(0)
-        print(f"starting job {job}")
-        job()
-        print(f"finished job {job}")
+        task = self.work_queue.pop(0)
+        task.start()
+        task.stop()  # TODO(josh): async-ify the tasks. Requires either unifying Condition, Event, or notion of [.follows() and .is_ready()]
 
       else:
         time.sleep(2)
 
   '''
+  Parse contents of message, when applicable append to job queue
   todo: this should be protobuff'ed
   '''
   def mess_thread(self, cv):
@@ -44,9 +60,9 @@ class srg_tester:
       with cv:  # in python this also acquires lock
         cv.wait()
       mess = self.req_serv.get_message()
-      if mess == "perform_reading":
-        print("got message perform_reading")
-        for job in getperformreadingjobs():
+      if int(mess) == SrgTesterJobType.PERFORM_READING:
+        print(f"got message {SrgTesterJobType.PERFORM_READING}")
+        for job in get_perform_reading_jobs():
           self.work_queue.append(job)
       else:
         print(f"warning: do not know how to interpret message: {mess}")
@@ -59,6 +75,6 @@ class srg_tester:
 
 
 if __name__ == "__main__":
-  t = srg_tester()
+  t = SrgTester()
   # start tcp server
   t.start_work()

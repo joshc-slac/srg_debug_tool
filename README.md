@@ -30,16 +30,16 @@ To simplify the user interactions we are codifying normal steps in the Makefile.
 - `make request_reading`- spawns an instance of the client and specifically requests a reading be performed by server
 - `make transfer_working_files` - rsyncs working files to development machine `psbuild-rhel7`, if FTPUSER not definded defaults to `joshc`
 - `make flake8` - will lint the project, please do so!
+- `make test` - will run all unit tests in the `tests/` directory, please do so!
 
-Pedantic note: this should all be dockerized why wont they let me run docker on prod tools.
+Pedantic note: this should all be dockerized why wont they let me run docker on prod tools, TID seemingly gets too...
 
 ## Note that no besides Josh cares about
 This would all be a million times better in gods programming langauge c++ todo port 
 ### TODOS:
-- [ ] integrate flake8 into make file
-
+- [ ] Increase unit test coverage please
+- [ ] Typify please
 - [ ] make TCP server more legit or switch to GRPC (or just protobuf over tcp...)
-- [ ] Formalize (as far as python allows) notion of job queue, what is a job in python? Potentially use a python "wrapper" to anonymize these functions for job queue purposes
 - [ ] add spdlog or our epics logging environment
 - [ ] Formalize / unify pyepics interactions to be consistent with the rest of our codebase (if that consistency exists)
 - [ ] Mourn at the alter of c++ i will return just you wait
