@@ -40,18 +40,18 @@ def get_perform_reading_jobs(name_prefix="test"):
                         telnet_read(fname=name_prefix, event_signal=ev_sig)))
   task_list.append(Task("read_hz",
                    lambda:
-                        read_ball_hz_for_x_seconds(read_time=30, fname=name_prefix, event_signal=ev_sig)))
+                        read_ball_hz_for_x_seconds(read_time=10, fname=name_prefix, event_signal=ev_sig)))
   task_list.append(Task("publish_zero",
                    lambda :
                         print("publishing a request to zero left unimplemented for now")))
   task_list.append(Task("evaluate_run",
                    lambda: 
-                        print("not implemented")))
+                        evaluate_success(fname=name_prefix, event_signal=ev_sig)))
   
   return task_list  # python lists suck, either use a dict or real queue or smthing
 
 
-def read_ball_hz_for_x_seconds(read_time=10.0, fname="tmp", event_signal=threading.Event()):
+def read_ball_hz_for_x_seconds(read_time=10.0, fname="sample", event_signal=threading.Event()):
   '''
   Description:
     Will return a list of samples of ball speed over a x second horizon
@@ -98,7 +98,6 @@ def telnet_read(fname="sample", event_signal=threading.Event()):
     # open a wel named file here
     f = open(f"temp/{fname}_telnet.txt", "w")
     while (event_signal.is_set() is not True):
-      print("working on it...")
       try:
         data = tn.read_some().decode("utf-8")
         # write data to file thusly:
@@ -110,9 +109,37 @@ def telnet_read(fname="sample", event_signal=threading.Event()):
   return
 
 
+def evaluate_success(fname="sample", event_signal=threading.Event()):
+
+  # wait for signal that read thread is complete
+  event_signal.wait(None)
+  print("begining analysis")
+
+  # parse HZ output file to determine if we dropped the ball 
+  # TODO(josh): double fileio is super inefecient, but python is annoying with mem. fix this
+  # TODO(josh): wrap file io in try catch
+  og_fname_hz = f"temp/{fname}_hz.csv"
+  og_fname_telnet = f"temp/{fname}_telnet.txt"
+  hz_arr = np.fromfile(og_fname_hz, dtype=float, count=-1, sep=",")
+  fail_if_false = np.all(hz_arr)
+
+  # sort files based on success or failure
+  if fail_if_false is False:
+    print("FIALLLL")
+    os.replace(og_fname_hz, f"fail/{fname}_hz.csv")
+    os.replace(og_fname_telnet, f"fail/{fname}_telnet.txt")
+  else:
+    print("SUCCC")
+    os.replace(og_fname_hz, f"succ/{fname}_hz.csv")
+    os.replace(og_fname_telnet, f"succ/{fname}_telnet.txt")
+
+  return
+
+
 if __name__ == '__main__':
   # even = threading.Event()
   jobs = get_perform_reading_jobs("your_sick")
+  # naive task engine
   for job in jobs:
     job.start()
 

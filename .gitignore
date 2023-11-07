@@ -4,3 +4,7 @@ lib*
 pyvenv.cfg
 *__pycache__*
 *.txt
+*.csv
+temp/*
+succ/*
+fail/*

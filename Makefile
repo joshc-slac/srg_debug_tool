@@ -10,6 +10,7 @@ setup:
 	else \
 		@python3 -m venv . ; \
 	fi
+	@mkdir temp succ fail
 
 .PHONY: run
 run:
