@@ -29,7 +29,7 @@ class SrgTester:
     self.cv = threading.Condition()
     self.req_serv = RequestServer(self.cv)
     self.message_thread = threading.Thread(target=self.mess_thread, args=(self.cv,))
-    self.work_queue = []  # work queue of anonymous functions void(void)
+    self.work_queue = []  # work queue of anonymous functions void(void) #TODO make this of type queue from the queue lib
 
     self.do_work = False
     self.work_thread = threading.Thread(target=self.work_thread, args=())
