@@ -12,7 +12,7 @@ import os
 import numpy as np
 from enum import IntEnum
 
-from epics import caget
+from epics import caget, caput
 
 from Task import Task
 
@@ -63,13 +63,18 @@ def get_perform_reading_jobs(name_prefix: str = "test", job_type: SrgTesterJobTy
                         read_ball_hz_for_x_seconds(read_time=10, fname=name_prefix, event_signal=ev_sig)))
   if (job_type is SrgTesterJobType.PERFORM_ARMED_READING):
     task_list.append(Task("publish_zero",
-                     lambda :
-                          print("publishing a request to zero left unimplemented for now")))
+                     lambda : request_srg_zero()))
+                          
   task_list.append(Task("evaluate_run",
                    lambda: 
                         evaluate_success(fname=name_prefix, event_signal=ev_sig)))
   
   return task_list  # python lists suck, either use a dict or real queue or smthing
+
+
+def request_srg_zero():
+  caput("EM1K0:GMD:GSR:1:ApplyZeroOffset", 1)
+  return
 
 
 def read_ball_hz_for_x_seconds(read_time=10.0, fname="sample", event_signal=threading.Event()):
