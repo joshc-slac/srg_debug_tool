@@ -11,6 +11,7 @@ class RequestServer:
     self.do_work = False
     self.work_thread = threading.Thread(target=self.socket_loop, args=())
     self.setup_socket()
+    self.message_queue_lock = threading.Lock()
     self.message_queue = []  # python "queue" just have to treat it like one
 
   # private member functions
@@ -38,8 +39,15 @@ class RequestServer:
           print('Connected by', self.conn_addr)
           while True:
               data = self.conn_sock.recv(1024)
+
               # enqueue bytes as string. fwiw python sucks gimme c baby
-              self.message_queue.append(str(data.decode()))
+              if data.decode('utf-8') != "":
+                self.message_queue_lock.acquire()
+                self.message_queue.append(str(data.decode()))
+                self.message_queue_lock.release()
+              else:
+                print("WARNING: discarding empty string")
+
               if not data:
                 with self.cv:
                   self.cv.notify()
@@ -69,7 +77,11 @@ class RequestServer:
       print("WARNING: message length zero  not popping")
       return str()
     else:
-      return self.message_queue.pop(0)
+      self.message_queue_lock.acquire()
+      print(self.message_queue)
+      mess = self.message_queue.pop(0)
+      self.message_queue_lock.release()
+      return mess
 
   def __del__(self):
     # close socket
