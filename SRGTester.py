@@ -1,27 +1,9 @@
 import threading
 import time
-from enum import IntEnum
+from datetime import datetime
 
-from SRGTesterJobs import get_perform_reading_jobs
+from SRGTesterJobs import SrgTesterJobType, get_perform_reading_jobs
 from RequestServer import RequestServer
-
-
-class SrgTesterJobType(IntEnum):
-  # TODO(josh): can reasonably be split into its own file
-  # TODO(josh): get StrEnum to work on prod machines... needs pip-ability
-  NONE = -1
-  '''
-  # High Level Command: Perform Reading
-  step 1: caput to EM1K0:GMD:GSR:1:ApplyZeroOffset
-  step 2: monitor EM1K0:GMD:GSR:1:GetRotSpeed for 30 seconds
-  step 3: concurrently monitor telnet logs
-  step 4: parse output of step 2; determine if failure, sort accordingling 
-  '''
-  PERFORM_READING = 0
-  APPLY_ZERO_OFFSET = 1
-  MONITOR_ROT_SPEED = 2
-  MONITOR_SERIAL = 3
-  EVALUATE_RUN = 4
 
 
 class SrgTester:
@@ -46,7 +28,8 @@ class SrgTester:
       if self.work_queue:
         task = self.work_queue.pop(0)
         task.start()
-        task.stop()  # TODO(josh): async-ify the tasks. Requires either unifying Condition, Event, or notion of [.follows() and .is_ready()]
+        # task.stop()  # TODO(josh): async-ify the tasks. Requires either unifying Condition, Event, or notion of [.follows() and .is_ready()], 
+        # determine what it means for a thread to rejoin in this context? after we do a high level command send join command to all child threads?
 
       else:
         time.sleep(2)
@@ -59,13 +42,19 @@ class SrgTester:
     while (1):
       with cv:  # in python this also acquires lock
         cv.wait()
-      mess = self.req_serv.get_message()
-      if int(mess) == SrgTesterJobType.PERFORM_READING:
-        print(f"got message {SrgTesterJobType.PERFORM_READING}")
-        for job in get_perform_reading_jobs():
-          self.work_queue.append(job)
+      mess = SrgTesterJobType(int(self.req_serv.get_message()))  # TODO(josh): unpacking int thing sucks but so does python 3.6
+      print(f"lookuing at mess: {mess}, {type(mess)}")
+      print(f"is mess PERFORM_UNARMED_READING? {mess is SrgTesterJobType.PERFORM_UNARMED_READING}")
+      # server side arg validation
+      if (mess is not SrgTesterJobType.PERFORM_UNARMED_READING and mess is not SrgTesterJobType.PERFORM_ARMED_READING):
+        print(f"Error: do not know how to interpret message: {mess}")
+        continue
       else:
-        print(f"warning: do not know how to interpret message: {mess}")
+        print(f"Info: got message {mess}")
+        # generate unique filename... # TODO(josh): itd be slightly more intelligent for the client to opine o fname
+        fname_time = datetime.now().strftime("%m_%d_%Y-%H_%M_%S")
+        for job in get_perform_reading_jobs(fname_time, mess):
+          self.work_queue.append(job)
 
   def start_work(self):
     self.do_work = True

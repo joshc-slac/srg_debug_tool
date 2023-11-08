@@ -18,7 +18,11 @@ run:
 
 .PHONY: request_reading
 request_reading:
-	@source bin/activate && python3 testClient.py -m 0
+	@source bin/activate && python3 testClient.py -r 1
+
+.PHONY: request_reading_armed
+request_reading_armed:
+	@source bin/activate && python3 testClient.py -x 1
 
 .PHONY: transfer_working_files
 transfer_working_files:
