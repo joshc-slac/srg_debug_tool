@@ -10,13 +10,33 @@ import threading
 import typing
 import os
 import numpy as np
+from enum import IntEnum
 
 from epics import caget
 
 from Task import Task
 
 
-def get_perform_reading_jobs(name_prefix="test"):
+class SrgTesterJobType(IntEnum):
+  # TODO(josh): can reasonably be split into its own file
+  # TODO(josh): get StrEnum to work on prod machines... needs pip-ability
+  NONE = -1
+  '''
+  # High Level Command: Perform Reading
+  step 1: caput to EM1K0:GMD:GSR:1:ApplyZeroOffset
+  step 2: monitor EM1K0:GMD:GSR:1:GetRotSpeed for 30 seconds
+  step 3: concurrently monitor telnet logs
+  step 4: parse output of step 2; determine if failure, sort accordingling 
+  '''
+  PERFORM_UNARMED_READING = 0
+  APPLY_ZERO_OFFSET = 1
+  MONITOR_ROT_SPEED = 2
+  MONITOR_SERIAL = 3
+  EVALUATE_RUN = 4
+  PERFORM_ARMED_READING = 5
+
+
+def get_perform_reading_jobs(name_prefix: str = "test", job_type: SrgTesterJobType = SrgTesterJobType.PERFORM_UNARMED_READING):
   ''''
   Generate anonymous functions to complte jobs
   Configures signalling between functions to schedule subtasks
@@ -41,9 +61,10 @@ def get_perform_reading_jobs(name_prefix="test"):
   task_list.append(Task("read_hz",
                    lambda:
                         read_ball_hz_for_x_seconds(read_time=10, fname=name_prefix, event_signal=ev_sig)))
-  task_list.append(Task("publish_zero",
-                   lambda :
-                        print("publishing a request to zero left unimplemented for now")))
+  if (job_type is SrgTesterJobType.PERFORM_ARMED_READING):
+    task_list.append(Task("publish_zero",
+                     lambda :
+                          print("publishing a request to zero left unimplemented for now")))
   task_list.append(Task("evaluate_run",
                    lambda: 
                         evaluate_success(fname=name_prefix, event_signal=ev_sig)))
