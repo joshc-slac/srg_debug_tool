@@ -1,6 +1,8 @@
 import threading
 import time
 from datetime import datetime
+from queue import Queue
+
 
 from SRGTesterJobs import SrgTesterJobType, get_perform_reading_jobs
 from RequestServer import RequestServer
@@ -11,7 +13,7 @@ class SrgTester:
     self.cv = threading.Condition()
     self.req_serv = RequestServer(self.cv)
     self.message_thread = threading.Thread(target=self.mess_thread, args=(self.cv,))
-    self.work_queue = []  # work queue of anonymous functions void(void) #TODO make this of type queue from the queue lib
+    self.work_queue = Queue(maxsize=-1)  # a queue that holds lists of tasks to be done
 
     self.do_work = False
     self.work_thread = threading.Thread(target=self.work_thread, args=())
@@ -26,11 +28,11 @@ class SrgTester:
   def work_thread(self):
     while (1):
       if self.work_queue:
-        task = self.work_queue.pop(0)
-        task.start()
-        # task.stop()  # TODO(josh): async-ify the tasks. Requires either unifying Condition, Event, or notion of [.follows() and .is_ready()], 
-        # determine what it means for a thread to rejoin in this context? after we do a high level command send join command to all child threads?
-
+        task_list = self.work_queue.get()
+        for task in task_list:
+          task.start()
+        for task in task_list:
+          task.stop()  # TODO(josh): potential race condition, sufficient for now, generally be smarter
       else:
         time.sleep(2)
 
@@ -53,8 +55,7 @@ class SrgTester:
         print(f"Info: got message {mess}")
         # generate unique filename... # TODO(josh): itd be slightly more intelligent for the client to opine o fname
         fname_time = datetime.now().strftime("%m_%d_%Y-%H_%M_%S")
-        for job in get_perform_reading_jobs(fname_time, mess):
-          self.work_queue.append(job)
+        self.work_queue.put(get_perform_reading_jobs(fname_time, mess))
 
   def start_work(self):
     self.do_work = True
