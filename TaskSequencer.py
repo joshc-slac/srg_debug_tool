@@ -4,11 +4,11 @@ from datetime import datetime
 from queue import Queue
 
 
-from SRGTesterJobs import SrgTesterJobType, get_perform_reading_jobs
-from RequestServer import RequestServer
+from jobs.SRGTesterJobs import SrgTesterJobType, get_perform_reading_jobs
+from remote_call.RequestServer import RequestServer
 
 
-class SrgTester:
+class TaskSequencer:
   def __init__(self):
     self.cv = threading.Condition()
     self.req_serv = RequestServer(self.cv)
@@ -65,6 +65,6 @@ class SrgTester:
 
 
 if __name__ == "__main__":
-  t = SrgTester()
+  t = TaskSequencer()
   # start tcp server
   t.start_work()

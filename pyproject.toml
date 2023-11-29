@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "srg_failure_tester"
+name = "task_sequencer"
 version = "0.0.1"
 authors = [
   { name="Josh Cohen", email="joshc@slac.stanford.edu" },

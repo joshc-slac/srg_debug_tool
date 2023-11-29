@@ -1,3 +1,4 @@
 pyepics
 numpy
 flake8
+pytest
