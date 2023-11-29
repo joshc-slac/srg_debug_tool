@@ -5,10 +5,11 @@ import socket
 import sys
 import argparse
 
-from SRGTesterJobs import SrgTesterJobType
+sys.path.append(".")
+from jobs import SrgTesterJobType
 
 
-class client:
+class TCPClient:
   def __init__(self):
     self.HOST = 'localhost'    # the remote host
     self.PORT = 11312              # the same port as used by the server
@@ -72,4 +73,4 @@ class client:
 
 
 if __name__ == "__main__":
-  c = client()
+  c = TCPClient()
